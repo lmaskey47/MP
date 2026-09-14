@@ -74,8 +74,8 @@ jobs:
       MONGO_ADMIN_PASSWORD: ${{ secrets.MONGO_ADMIN_PASSWORD }}
       MONGO_APP_PASSWORD: ${{ secrets.MONGO_APP_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      TLS_CERTIFICATE_FILE: ${{ runner.temp }}/fullchain.pem
-      TLS_PRIVATE_KEY_FILE: ${{ runner.temp }}/privkey.pem
+      TLS_CERTIFICATE_FILE: /tmp/logichain-fullchain.pem
+      TLS_PRIVATE_KEY_FILE: /tmp/logichain-privkey.pem
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -101,6 +101,7 @@ jobs:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
         run: |
+          # shellcheck disable=SC2029 -- REGISTRY_USER doit etre developpe par le runner.
           printf '%s' "$REGISTRY_TOKEN" | ssh deploy@"$DEPLOY_HOST" "sudo docker login ghcr.io -u '$REGISTRY_USER' --password-stdin"
       - run: ansible-playbook site.yml
       - name: Enregistrer le deploiement valide
