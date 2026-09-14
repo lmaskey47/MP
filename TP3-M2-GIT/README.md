@@ -44,8 +44,10 @@ interne à l'image, sans privilèges ni écriture dans son système de fichiers.
 
 ## Préparer GitHub
 
-Le dossier livré ne prouve pas l'existence d'un dépôt distant. Depuis la racine,
-après vérification des fichiers et configuration de son identité Git :
+Le dépôt partagé est désormais [lmaskey47/MP](https://github.com/lmaskey47/MP),
+avec `main` et `develop`. Pour le récupérer, utiliser
+`git clone https://github.com/lmaskey47/MP.git`. Les commandes suivantes concernent
+uniquement la création d'un autre dépôt depuis une copie sans historique Git :
 
 ```bash
 git init -b main

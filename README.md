@@ -1,5 +1,12 @@
 # LogiChain — démarrage Windows
 
+[![CI](https://github.com/lmaskey47/MP/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lmaskey47/MP/actions/workflows/ci.yml)
+
+Le dépôt partagé est [lmaskey47/MP](https://github.com/lmaskey47/MP).
+Les branches `main` et `develop` exécutent la CI ; elle peut aussi être lancée
+manuellement depuis l'onglet Actions. Le déploiement serveur reste désactivé
+jusqu'à la configuration de son environnement et de `DEPLOY_ENABLED=true`.
+
 Le code mobile et l’API sont dans `TP3-M2-Front` et `TP3-M2-APi`.
 Node 24.20.0 est installé localement dans `.tools` : les commandes ci-dessous
 l’utilisent sans modifier le Node 25 global de Windows.
