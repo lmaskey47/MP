@@ -101,7 +101,7 @@ jobs:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
         run: |
-          # shellcheck disable=SC2029 -- REGISTRY_USER doit etre developpe par le runner.
+          # shellcheck disable=SC2029
           printf '%s' "$REGISTRY_TOKEN" | ssh deploy@"$DEPLOY_HOST" "sudo docker login ghcr.io -u '$REGISTRY_USER' --password-stdin"
       - run: ansible-playbook site.yml
       - name: Enregistrer le deploiement valide
