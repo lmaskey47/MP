@@ -1,0 +1,62 @@
+---
+- name: Creer le repertoire TLS
+  ansible.builtin.file:
+    path: /etc/nginx/tls
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Installer le certificat TLS avec sa chaine
+  ansible.builtin.copy:
+    src: "{{ tls_certificate }}"
+    dest: /etc/nginx/tls/fullchain.pem
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Recharger Nginx
+
+- name: Installer la cle privee TLS
+  ansible.builtin.copy:
+    src: "{{ tls_private_key }}"
+    dest: /etc/nginx/tls/privkey.pem
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+  notify: Recharger Nginx
+
+- name: Retirer le site par defaut
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Recharger Nginx
+
+- name: Installer la configuration Nginx complete et la valider
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: /usr/sbin/nginx -t -c %s
+  notify: Recharger Nginx
+
+- name: Activer Nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    enabled: true
+    state: started
+
+- name: Appliquer les changements avant le controle HTTPS
+  ansible.builtin.meta: flush_handlers
+
+- name: Verifier HTTPS depuis le serveur
+  ansible.builtin.uri:
+    url: "https://{{ api_domain }}/ready"
+    status_code: 200
+    validate_certs: true
+  register: web_proxy_health
+  until: web_proxy_health.status | default(0) == 200
+  retries: 6
+  delay: 5

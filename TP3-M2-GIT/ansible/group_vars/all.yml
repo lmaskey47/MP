@@ -1,0 +1,13 @@
+---
+deploy_user: deploy
+deploy_public_key: "{{ lookup('env', 'DEPLOY_PUBLIC_KEY') }}"
+ssh_allowed_cidr: "{{ lookup('env', 'SSH_ALLOWED_CIDR') }}"
+api_domain: "{{ lookup('env', 'API_DOMAIN') }}"
+api_image: "{{ lookup('env', 'API_IMAGE') }}"
+mongo_image: mongo:8.0.14@sha256:6eaaf8b194dc2c78a61deae63f1c163c2e55769c2157d6406f517d902694c792
+mongo_admin_password: "{{ lookup('env', 'MONGO_ADMIN_PASSWORD') }}"
+mongo_app_password: "{{ lookup('env', 'MONGO_APP_PASSWORD') }}"
+jwt_secret: "{{ lookup('env', 'JWT_SECRET') }}"
+tls_certificate: "{{ lookup('env', 'TLS_CERTIFICATE_FILE') }}"
+tls_private_key: "{{ lookup('env', 'TLS_PRIVATE_KEY_FILE') }}"
+backup_retention_days: 14

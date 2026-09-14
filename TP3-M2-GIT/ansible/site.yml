@@ -1,0 +1,34 @@
+---
+- name: Provisionner et deployer LogiChain
+  hosts: production
+  become: true
+  pre_tasks:
+    - name: Verifier le systeme cible
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == 'Ubuntu'
+          - ansible_distribution_version == '24.04'
+        fail_msg: Le serveur cible doit utiliser Ubuntu 24.04 LTS avec Python 3 et SSH.
+    - name: Verifier les parametres publics
+      ansible.builtin.assert:
+        that:
+          - deploy_public_key is match('^ssh-(ed25519|rsa) ')
+          - ssh_allowed_cidr | length > 0
+          - api_domain is match('^[a-zA-Z0-9][a-zA-Z0-9.-]+$')
+          - api_image is match('^ghcr.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$')
+          - tls_certificate | length > 0
+          - tls_private_key | length > 0
+    - name: Verifier les secrets obligatoires
+      ansible.builtin.assert:
+        that:
+          - mongo_admin_password | length >= 32
+          - mongo_app_password | length >= 32
+          - jwt_secret | length >= 32
+          - jwt_secret is match('^[A-Za-z0-9_-]{32,}$')
+          - mongo_admin_password != mongo_app_password
+      no_log: true
+  roles:
+    - system_security
+    - database
+    - application
+    - web_proxy

@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API
+    runs-on: ubuntu-24.04
+    services:
+      mongodb:
+        image: mongo:8.0.14
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1})'"
+          --health-interval 10s --health-timeout 5s --health-retries 12
+    defaults:
+      run:
+        working-directory: TP3-M2-APi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.20.0
+          cache: npm
+          cache-dependency-path: TP3-M2-APi/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Verifier la construction de l image de production
+        run: docker build -t logichain-api:test .
+      - name: Tester MongoDB authentifie et la restauration
+        run: python3 ../TP3-M2-GIT/tests/smoke.py logichain-api:test
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: TP3-M2-Front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.20.0
+          cache: npm
+          cache-dependency-path: TP3-M2-Front/package-lock.json
+      - run: npm ci
+      - run: npm run lint -- --max-warnings=0
+      - run: npm run typecheck
+      - run: npm test -- --runInBand
+
+  infrastructure:
+    name: Infrastructure
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: TP3-M2-GIT/ansible
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: TP3-M2-GIT/ansible/requirements.txt
+      - run: pip install -r requirements.txt
+      - run: ansible-galaxy collection install -r requirements.yml
+      - run: ansible-playbook site.yml --syntax-check
+      - run: ansible-playbook rollback.yml --syntax-check
+      - run: ansible-lint
+
+  commits:
+    name: Conventional Commits
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verifier le titre de la PR utilise pour le squash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          title = os.environ['PR_TITLE']
+          assert re.fullmatch(r'(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._/-]+\))?!?: .+', title), 'Titre Conventional Commits requis'
+          PY

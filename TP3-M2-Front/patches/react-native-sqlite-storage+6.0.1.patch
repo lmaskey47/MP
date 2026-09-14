@@ -1,0 +1,75 @@
+diff --git a/node_modules/react-native-sqlite-storage/platforms/android/build.gradle b/node_modules/react-native-sqlite-storage/platforms/android/build.gradle
+--- a/node_modules/react-native-sqlite-storage/platforms/android/build.gradle
++++ b/node_modules/react-native-sqlite-storage/platforms/android/build.gradle
+@@ -1,43 +1,20 @@
+-buildscript {
+-    repositories {
+-        google()
+-        jcenter()
+-    }
+-
+-    dependencies {
+-        classpath 'com.android.tools.build:gradle:3.1.4'
+-    }
+-}
+-
+ apply plugin: 'com.android.library'
+ 
+-def safeExtGet(prop, fallback) {
+-    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+-}
+-
+ android {
+-    compileSdkVersion safeExtGet('compileSdkVersion', 23)
+-    buildToolsVersion safeExtGet('buildToolsVersion', '27.0.3')
+-
++    namespace 'org.pgsqlite'
++    compileSdkVersion rootProject.ext.compileSdkVersion
++    buildToolsVersion rootProject.ext.buildToolsVersion
+     defaultConfig {
+-        minSdkVersion safeExtGet('minSdkVersion', 16)
+-        targetSdkVersion safeExtGet('targetSdkVersion', 22)
+-        versionCode 1
+-        versionName "1.0"
+-    }
+-    lintOptions {
+-        abortOnError false
++        minSdkVersion rootProject.ext.minSdkVersion
++        targetSdkVersion rootProject.ext.targetSdkVersion
+     }
+ }
+ 
+ repositories {
++    google()
+     mavenCentral()
+-    google()
+-    maven {
+-        url "https://maven.google.com"
+-    }
+ }
+ 
+ dependencies {
+-    implementation 'com.facebook.react:react-native:+'
++    implementation 'com.facebook.react:react-android'
+ }
+diff --git a/node_modules/react-native-sqlite-storage/platforms/android/src/main/AndroidManifest.xml b/node_modules/react-native-sqlite-storage/platforms/android/src/main/AndroidManifest.xml
+--- a/node_modules/react-native-sqlite-storage/platforms/android/src/main/AndroidManifest.xml
++++ b/node_modules/react-native-sqlite-storage/platforms/android/src/main/AndroidManifest.xml
+@@ -1,3 +1,3 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.pgsqlite" >
++<manifest xmlns:android="http://schemas.android.com/apk/res/android" >
+ </manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-sqlite-storage/react-native.config.js b/node_modules/react-native-sqlite-storage/react-native.config.js
+--- a/node_modules/react-native-sqlite-storage/react-native.config.js
++++ b/node_modules/react-native-sqlite-storage/react-native.config.js
+@@ -2,7 +2,7 @@
+ 	dependency: {
+ 		platforms: {
+ 			ios: {
+-				project: './platforms/ios/SQLite.xcodeproj'
++				podspecPath: './react-native-sqlite-storage.podspec'
+ 			},
+ 			android: {
+ 				sourceDir: './platforms/android'

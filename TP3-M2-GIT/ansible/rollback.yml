@@ -1,0 +1,15 @@
+---
+- name: Restaurer une version applicative connue
+  hosts: production
+  become: true
+  pre_tasks:
+    - name: Exiger un digest explicite
+      ansible.builtin.assert:
+        that:
+          - api_image is match('^ghcr.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$')
+          - mongo_app_password | length >= 32
+          - jwt_secret | length >= 32
+          - jwt_secret is match('^[A-Za-z0-9_-]{32,}$')
+      no_log: true
+  roles:
+    - application

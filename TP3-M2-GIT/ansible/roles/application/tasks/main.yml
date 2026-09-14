@@ -1,0 +1,45 @@
+---
+- name: Installer les variables privees de l API
+  ansible.builtin.copy:
+    dest: /etc/logichain/api.env
+    content: |
+      NODE_ENV=production
+      HOST=127.0.0.1
+      PORT=3000
+      MONGODB_URI=mongodb://logichain:{{ mongo_app_password | urlencode }}@127.0.0.1:27017/logichain?authSource=logichain
+      JWT_SECRET={{ jwt_secret }}
+      JWT_EXPIRES_IN=8h
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+
+- name: Deployer l image immuable sous un utilisateur non root
+  community.docker.docker_container:
+    name: logichain-api
+    image: "{{ api_image }}"
+    pull: missing
+    state: started
+    restart_policy: unless-stopped
+    network_mode: host
+    user: '1000:1000'
+    env_file: /etc/logichain/api.env
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=64m']
+    cap_drop: [ALL]
+    security_opts: ['no-new-privileges:true']
+    memory: 512M
+    log_driver: json-file
+    log_options:
+      max-size: 10m
+      max-file: '3'
+  no_log: true
+
+- name: Verifier la disponibilite de l API apres connexion et indexation MongoDB
+  ansible.builtin.uri:
+    url: http://127.0.0.1:3000/ready
+    status_code: 200
+  register: application_health
+  until: application_health.status | default(0) == 200
+  retries: 24
+  delay: 5

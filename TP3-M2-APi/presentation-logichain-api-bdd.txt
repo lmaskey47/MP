@@ -1,0 +1,285 @@
+SLIDE 1 - Titre
+LogiChain - API + Base de donnees
+
+Projet Master Data & IA
+Objectif : concevoir la partie backend d'une plateforme logistique evenementielle.
+
+Technologies principales :
+- Node.js / TypeScript
+- Express
+- MongoDB
+- Mongoose
+- Swagger
+
+Questions possibles du professeur :
+
+Q1. Pourquoi avoir choisi Node.js et TypeScript ?
+Reponse : Node.js est adapte pour creer des API rapides et legeres. TypeScript ajoute un typage statique, ce qui reduit les erreurs et rend le code plus maintenable.
+
+Q2. Quel est le role d'Express ?
+Reponse : Express sert a creer le serveur HTTP et a definir les routes de l'API, par exemple /health, /api/v1/events ou /api/v1/items.
+
+Q3. A quoi sert Swagger ?
+Reponse : Swagger permet de documenter l'API et de tester les endpoints directement depuis une interface web, sans developper de front.
+
+
+SLIDE 2 - Contexte du projet
+LogiChain repond aux besoins des grands evenements : festivals, salons, rassemblements eco-responsables.
+
+Problemes a resoudre :
+- Suivre le materiel sur le terrain
+- Gerer les prestataires et les transporteurs
+- Detecter les anomalies rapidement
+- Garder une trace fiable des mouvements
+- Fonctionner meme avec une connexion instable
+
+Le projet se concentre ici uniquement sur l'API et la base de donnees.
+
+Questions possibles du professeur :
+
+Q1. Quel probleme concret resout LogiChain ?
+Reponse : LogiChain aide a suivre le materiel, les livraisons, les anomalies et les actions terrain pendant un evenement, afin d'avoir une vision fiable de la logistique.
+
+Q2. Pourquoi le mode connexion instable est important ?
+Reponse : Sur un evenement, les agents peuvent travailler dans des zones ou le reseau est mauvais. Il faut donc prevoir que certaines operations soient synchronisees plus tard.
+
+Q3. Pourquoi se limiter a l'API et a la BDD ?
+Reponse : L'objectif du projet est de construire le socle backend. Un front web ou mobile pourra ensuite utiliser cette API.
+
+
+SLIDE 3 - Objectifs API + BDD
+Objectifs principaux :
+- Centraliser les donnees logistiques dans MongoDB
+- Fournir une API REST claire et testable
+- Gerer les evenements, zones, equipements, taches et livraisons
+- Tracer les scans, mouvements et anomalies
+- Exposer des KPI pour le pilotage
+- Prevoir une synchronisation offline-first
+
+L'objectif est d'avoir une base solide pour un futur front web ou mobile.
+
+Questions possibles du professeur :
+
+Q1. C'est quoi une API REST ?
+Reponse : Une API REST expose des ressources avec des routes HTTP. Par exemple, GET permet de lire, POST de creer, PATCH de modifier et DELETE de supprimer.
+
+Q2. Pourquoi centraliser les donnees ?
+Reponse : Cela permet d'avoir une source unique et fiable pour les equipements, les evenements, les anomalies et les utilisateurs.
+
+Q3. A quoi servent les KPI ?
+Reponse : Les KPI servent au pilotage. Ils donnent une vue synthetique de l'etat du systeme, par exemple le nombre d'equipements, d'anomalies ou de livraisons.
+
+
+SLIDE 4 - Architecture technique
+L'API suit une architecture N-Tier stricte.
+
+Couches du projet :
+- Models : schemas MongoDB et entites metier
+- Repositories : acces exclusif a MongoDB
+- Services : logique metier
+- Controllers : gestion des requetes HTTP
+- Routes : exposition REST des endpoints
+
+Avantage :
+Chaque couche a une responsabilite claire, ce qui rend le code plus maintenable et testable.
+
+Questions possibles du professeur :
+
+Q1. Pourquoi avoir separe le projet en plusieurs couches ?
+Reponse : Cela evite de melanger les responsabilites. Les routes gerent l'entree HTTP, les services gerent le metier, et les repositories gerent la base de donnees.
+
+Q2. Quelle est la difference entre controller et service ?
+Reponse : Le controller recupere la requete HTTP et renvoie la reponse. Le service contient la logique metier, par exemple creer un item, appliquer une synchronisation ou calculer des KPI.
+
+Q3. Pourquoi les repositories sont importants ?
+Reponse : Ils centralisent l'acces a MongoDB. Si on change une requete ou une logique de base de donnees, on sait ou intervenir.
+
+
+SLIDE 5 - Base de donnees MongoDB
+MongoDB est utilise comme base principale.
+
+Collections principales :
+- users
+- events
+- items
+- tasks
+- deliveries
+- anomalies
+- notifications
+- monitoringmetrics
+
+Choix MongoDB :
+- Documents imbriques pour l'historique des equipements
+- GeoJSON pour les coordonnees et zones
+- Time Series pour les donnees de monitoring
+- Index composes et geospatiaux pour les performances
+
+Questions possibles du professeur :
+
+Q1. Pourquoi MongoDB plutot qu'une base SQL ?
+Reponse : MongoDB est pratique pour des donnees flexibles et imbriquees, comme l'historique d'un equipement ou les zones d'un evenement. Il gere aussi bien le GeoJSON.
+
+Q2. A quoi servent les index ?
+Reponse : Les index accelerent les recherches. Par exemple, chercher les equipements d'un evenement par statut ou par zone devient plus rapide.
+
+Q3. C'est quoi GeoJSON ?
+Reponse : GeoJSON est un format standard pour stocker des donnees geographiques, par exemple un point avec longitude/latitude ou un polygone representant une zone.
+
+Q4. Pourquoi une collection time series ?
+Reponse : Une collection time series est adaptee aux donnees mesurees dans le temps, comme les metriques de monitoring.
+
+
+SLIDE 6 - Ressources gerees par l'API
+L'API couvre les ressources essentielles du sujet.
+
+Ressources disponibles :
+- Authentification utilisateur
+- Evenements et zones geographiques
+- Equipements logistiques
+- Scans et mouvements terrain
+- Transferts de responsabilite
+- Maintenance
+- Anomalies geolocalisees
+- Taches assignees aux agents
+- Livraisons et feuilles de route
+- Notifications
+- Monitoring et dashboard KPI
+
+Toutes les routes sont documentees dans Swagger.
+
+Questions possibles du professeur :
+
+Q1. Quelle est la ressource la plus centrale du projet ?
+Reponse : L'evenement est central, car les equipements, taches, livraisons, anomalies et KPI sont rattaches a un evenement.
+
+Q2. Comment suivez-vous un equipement ?
+Reponse : Chaque equipement a un QR code, un statut, une zone, un responsable et un historique d'actions comme les scans, mouvements ou transferts.
+
+Q3. Pourquoi avoir ajoute les notifications ?
+Reponse : Les notifications permettent de prevenir les utilisateurs lorsqu'une information importante doit etre traitee, par exemple une anomalie ou une action terrain.
+
+
+SLIDE 7 - Securite et validation
+La securite est integree des la conception.
+
+Elements mis en place :
+- Authentification JWT
+- Roles utilisateurs : admin, logistic_manager, field_agent, provider
+- Protection des routes par Bearer Token
+- Validation des donnees avec Zod
+- Validation MongoDB via Mongoose
+- Codes HTTP standards : 200, 201, 400, 401, 403, 404, 409, 422
+
+Exemple :
+Une route protegee renvoie une erreur si aucun token JWT n'est fourni.
+
+Questions possibles du professeur :
+
+Q1. A quoi sert un JWT, ou jeton JWT ?
+Reponse : Un JWT sert a prouver qu'un utilisateur est authentifie. Apres la connexion, l'API renvoie un token. Ensuite, l'utilisateur l'envoie avec ses requetes pour acceder aux routes protegees.
+
+Q2. Pourquoi utiliser Bearer Token ?
+Reponse : Bearer Token est une convention HTTP. Le client envoie le token dans le header Authorization sous la forme : Bearer <token>.
+
+Q3. Quelle est la difference entre authentification et autorisation ?
+Reponse : L'authentification verifie qui est l'utilisateur. L'autorisation verifie ce qu'il a le droit de faire selon son role.
+
+Q4. A quoi sert Zod ?
+Reponse : Zod valide les donnees recues par l'API avant de les traiter. Cela evite d'enregistrer des donnees incorrectes ou incompletes.
+
+Q5. Pourquoi bcryptjs est utilise ?
+Reponse : bcryptjs sert a hasher les mots de passe. On ne stocke jamais un mot de passe en clair dans la base de donnees.
+
+
+SLIDE 8 - Offline-first et tracabilite
+Le sujet demande une robustesse en mode deconnecte.
+
+Solution prevue :
+- Chaque equipement possede un offlineVersion
+- Les operations offline sont envoyees a /api/v1/sync
+- L'API compare la version attendue avec la version en base
+- Si la version ne correspond pas : conflit 409
+- Si tout est correct : operation appliquee et version incrementee
+
+Cela permet d'eviter les pertes de donnees et de gerer les conflits de synchronisation.
+
+Questions possibles du professeur :
+
+Q1. C'est quoi le offline-first ?
+Reponse : C'est une approche ou l'application peut enregistrer des actions meme sans connexion, puis les synchroniser avec le serveur quand la connexion revient.
+
+Q2. A quoi sert offlineVersion ?
+Reponse : offlineVersion permet de savoir si l'equipement a ete modifie depuis la derniere synchronisation. C'est une forme de verrouillage optimiste.
+
+Q3. Pourquoi renvoyer une erreur 409 ?
+Reponse : Le code 409 signifie conflit. Il est renvoye quand une operation offline risque d'ecraser une modification plus recente en base.
+
+Q4. Comment l'historique aide la tracabilite ?
+Reponse : L'historique garde les actions importantes sur un equipement : creation, scan, mouvement, transfert, maintenance ou anomalie. On peut donc retracer son parcours.
+
+
+SLIDE 9 - Tests et demonstration
+L'API peut etre testee sans front grace a Swagger.
+
+URL Swagger :
+http://127.0.0.1:3000/docs
+
+Scenario de demo :
+1. Verifier /health
+2. Creer un utilisateur admin avec /auth/register
+3. Copier le token JWT
+4. Cliquer sur Authorize dans Swagger
+5. Creer un evenement
+6. Creer un equipement
+7. Scanner ou deplacer l'equipement
+8. Consulter le dashboard KPI
+
+Cette demo montre le fonctionnement complet API + BDD.
+
+Questions possibles du professeur :
+
+Q1. Comment prouver que l'API fonctionne ?
+Reponse : On peut tester /health pour verifier que le serveur repond, puis utiliser Swagger pour executer les routes principales.
+
+Q2. Pourquoi faut-il d'abord s'authentifier dans Swagger ?
+Reponse : La plupart des routes sont protegees. Il faut donc obtenir un token JWT avec register ou login, puis l'ajouter dans Swagger avec Authorize.
+
+Q3. Que montre le scenario de demo ?
+Reponse : Il montre le cycle complet : authentification, creation d'un evenement, creation d'un equipement, action terrain, puis consultation des donnees et des KPI.
+
+Q4. Comment verifier que MongoDB est bien utilise ?
+Reponse : Les donnees creees via l'API sont stockees dans MongoDB. On peut les retrouver via les routes GET ou directement dans la base.
+
+
+SLIDE 10 - Conclusion
+Le projet fournit une base backend complete pour LogiChain.
+
+Points forts :
+- API REST structuree
+- MongoDB adapte aux donnees logistiques
+- Architecture POO et N-Tier
+- Documentation Swagger
+- Securite JWT
+- Donnees geolocalisees
+- Historique des equipements
+- Synchronisation offline-first
+
+Perspectives :
+- Ajouter un front web ou PWA mobile
+- Ajouter des tests automatises complets
+- Ajouter des tests de charge
+- Deployer l'API sur un serveur cloud
+
+Questions possibles du professeur :
+
+Q1. Quelles sont les limites actuelles du projet ?
+Reponse : Le projet n'a pas encore de front, et les tests automatises pourraient etre renforces. Il faudrait aussi tester le comportement en charge avant une mise en production.
+
+Q2. Quelle serait la prochaine etape prioritaire ?
+Reponse : La prochaine etape serait de creer une interface web ou mobile pour consommer l'API, puis d'ajouter des tests automatises plus complets.
+
+Q3. Comment deployer ce projet ?
+Reponse : Il faudrait heberger l'API sur un serveur ou un service cloud, utiliser une base MongoDB accessible en ligne, configurer les variables d'environnement et securiser les secrets.
+
+Q4. Quel est le point fort principal du projet ?
+Reponse : Le point fort principal est d'avoir un backend structure, documente et coherent avec les besoins metier : securite, tracabilite, geolocalisation et synchronisation offline.

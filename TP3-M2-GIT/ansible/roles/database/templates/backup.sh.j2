@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+exec 9>/run/lock/logichain-backup.lock
+flock -n 9 || exit 0
+archive="/var/backups/logichain/$(date -u +%Y%m%dT%H%M%SZ).archive.gz"
+resume_api=false
+cleanup() {
+  rm -f -- "$archive.partial"
+  if "$resume_api"; then docker start logichain-api >/dev/null; fi
+}
+trap cleanup EXIT
+if [ "$(docker inspect --format '{{ '{{' }}.State.Running{{ '}}' }}' logichain-api 2>/dev/null || true)" = true ]; then
+  resume_api=true
+  docker stop --time 30 logichain-api >/dev/null
+fi
+docker run --rm --network host \
+  --mount type=bind,src=/etc/logichain/mongotools.yml,dst=/run/mongotools.yml,readonly \
+  '{{ mongo_image }}' mongodump --config=/run/mongotools.yml --db=logichain --archive --gzip > "$archive.partial"
+test -s "$archive.partial"
+mv -- "$archive.partial" "$archive"
+find /var/backups/logichain -maxdepth 1 -type f -name '*.archive.gz' -mtime +{{ backup_retention_days }} -delete

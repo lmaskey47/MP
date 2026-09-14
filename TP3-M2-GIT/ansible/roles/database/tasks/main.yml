@@ -1,0 +1,102 @@
+---
+- name: Creer le volume MongoDB
+  community.docker.docker_volume:
+    name: logichain-mongodb-data
+
+- name: Demarrer MongoDB avec authentification et acces local uniquement
+  community.docker.docker_container:
+    name: logichain-mongodb
+    image: "{{ mongo_image }}"
+    state: started
+    restart_policy: unless-stopped
+    published_ports: ['127.0.0.1:27017:27017']
+    volumes: ['logichain-mongodb-data:/data/db']
+    env:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: "{{ mongo_admin_password }}"
+    log_driver: json-file
+    log_options:
+      max-size: 10m
+      max-file: '3'
+  no_log: true
+
+- name: Attendre MongoDB
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 27017
+    timeout: 120
+
+- name: Creer le compte applicatif limite a LogiChain
+  community.mongodb.mongodb_user:
+    login_host: 127.0.0.1
+    login_user: root
+    login_password: "{{ mongo_admin_password }}"
+    login_database: admin
+    database: logichain
+    name: logichain
+    password: "{{ mongo_app_password }}"
+    roles: [readWrite]
+    update_password: on_create
+    state: present
+  register: database_user_result
+  until: database_user_result is succeeded
+  retries: 12
+  delay: 5
+  no_log: true
+
+- name: Installer la configuration privee de sauvegarde
+  ansible.builtin.copy:
+    dest: /etc/logichain/mongotools.yml
+    content: "{{ {'uri': 'mongodb://root:' ~ (mongo_admin_password | urlencode) ~ '@127.0.0.1:27017/?authSource=admin'} | to_nice_yaml }}"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+
+- name: Installer la sauvegarde et sa retention
+  ansible.builtin.template:
+    src: backup.sh.j2
+    dest: /usr/local/sbin/logichain-backup
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Installer le service de sauvegarde
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/logichain-backup.service
+    content: |
+      [Unit]
+      Description=Sauvegarde MongoDB LogiChain
+      Requires=docker.service
+      After=docker.service
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/logichain-backup
+      UMask=0077
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Recharger systemd
+
+- name: Planifier une sauvegarde quotidienne
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/logichain-backup.timer
+    content: |
+      [Unit]
+      Description=Sauvegarde quotidienne LogiChain
+      [Timer]
+      OnCalendar=*-*-* 02:00:00 UTC
+      Persistent=true
+      [Install]
+      WantedBy=timers.target
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Recharger systemd
+
+- name: Activer le minuteur de sauvegarde
+  ansible.builtin.systemd_service:
+    name: logichain-backup.timer
+    daemon_reload: true
+    enabled: true
+    state: started

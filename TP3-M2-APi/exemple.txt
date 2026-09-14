@@ -1,0 +1,718 @@
+EXEMPLES D'UTILISATION DES CONTROLEURS - LOGICHAIN API
+
+Base URL Swagger :
+http://127.0.0.1:3000/docs
+
+Base URL API :
+http://127.0.0.1:3000/api/v1
+
+Compte de test conseille :
+email : seed.admin@logichain.fr
+password : Password123
+
+Dans Swagger :
+1. Faire POST /auth/login
+2. Copier uniquement la valeur du token
+3. Cliquer sur Authorize
+4. Coller le token sans ajouter "Bearer"
+
+IDs utiles deja presents en base :
+eventId : 64a000000000000000000001
+adminId : 64a000000000000000000101
+managerId : 64a000000000000000000102
+agentId : 64a000000000000000000103
+providerId : 64a000000000000000000104
+itemGeneratorId : 64a000000000000000000201
+itemBarrierId : 64a000000000000000000202
+itemRadioId : 64a000000000000000000203
+itemLightId : 64a000000000000000000204
+
+
+1. AUTH CONTROLLER
+
+A quoi il sert :
+Le controleur Auth gere l'inscription et la connexion des utilisateurs.
+Il permet de recuperer un token JWT pour acceder aux routes protegees.
+
+Routes principales :
+- POST /auth/register
+- POST /auth/login
+
+Cas d'utilisation :
+- Creer un nouveau compte utilisateur
+- Connecter un utilisateur existant
+- Recuperer un token JWT pour tester les autres routes dans Swagger
+
+Exemple login :
+{
+  "email": "seed.admin@logichain.fr",
+  "password": "Password123"
+}
+
+Reponse attendue :
+- 200 OK
+- Un champ token
+- Un objet user avec id, email, role, eventIds
+
+Erreurs possibles :
+- 401 : email ou mot de passe incorrect
+- 409 : email deja utilise pendant un register
+- 422 : donnees invalides, par exemple email mal forme ou mot de passe trop court
+
+
+2. EVENT CONTROLLER
+
+A quoi il sert :
+Le controleur Event gere les evenements logistiques.
+Un evenement represente le cadre principal du projet : festival, salon, rassemblement, etc.
+Les zones, equipements, taches, anomalies et livraisons sont rattaches a un evenement.
+
+Routes principales :
+- GET /events
+- POST /events
+- GET /events/{eventId}
+- PUT /events/{eventId}
+- PATCH /events/{eventId}
+- DELETE /events/{eventId}
+
+Cas d'utilisation :
+- Lister tous les evenements
+- Creer un evenement avec des zones geographiques
+- Modifier le statut d'un evenement
+- Supprimer un evenement si on est admin
+
+Exemple de test simple :
+GET /events
+
+Exemple eventId :
+64a000000000000000000001
+
+Exemple modification :
+{
+  "status": "active",
+  "description": "Evenement demo modifie depuis Swagger"
+}
+
+Reponse attendue :
+- 200 OK pour lecture/modification
+- 201 Created pour creation
+- 204 No Content pour suppression
+
+
+3. ITEM CONTROLLER
+
+A quoi il sert :
+Le controleur Item gere les equipements logistiques.
+Un item peut etre scanne, deplace, transfere a un responsable ou mis en maintenance.
+Il garde aussi un historique des actions pour la tracabilite.
+
+Routes principales :
+- GET /events/{eventId}/items
+- POST /events/{eventId}/items
+- GET /items/{itemId}
+- PATCH /items/{itemId}
+- DELETE /items/{itemId}
+- POST /items/{itemId}/scans
+- POST /items/{itemId}/movements
+- POST /items/{itemId}/transfers
+- POST /items/{itemId}/maintenance
+
+Cas d'utilisation :
+- Voir tous les equipements d'un evenement
+- Creer un equipement avec QR code
+- Scanner un equipement sur le terrain
+- Deplacer un equipement d'une zone vers une autre
+- Changer le responsable d'un equipement
+- Declarer une maintenance
+
+Exemple lister les equipements :
+GET /events/64a000000000000000000001/items
+
+Exemple scan :
+POST /items/64a000000000000000000201/scans
+{
+  "actorId": "64a000000000000000000103",
+  "location": {
+    "type": "Point",
+    "coordinates": [2.3522, 48.8566]
+  },
+  "details": {
+    "source": "swagger-demo"
+  }
+}
+
+Exemple mouvement :
+POST /items/64a000000000000000000201/movements
+{
+  "actorId": "64a000000000000000000103",
+  "toZone": "DELIVERY-A",
+  "location": {
+    "type": "Point",
+    "coordinates": [2.365, 48.855]
+  }
+}
+
+Reponse attendue :
+- L'equipement mis a jour
+- Son statut, sa zone et son historique
+
+
+4. ANOMALY CONTROLLER
+
+A quoi il sert :
+Le controleur Anomaly gere les anomalies terrain.
+Une anomalie permet de signaler un probleme sur un equipement, avec une severite et une localisation.
+
+Routes principales :
+- GET /events/{eventId}/anomalies
+- POST /events/{eventId}/anomalies
+- PATCH /anomalies/{anomalyId}
+
+Cas d'utilisation :
+- Lister les anomalies d'un evenement
+- Declarer un probleme sur un equipement
+- Modifier le statut d'une anomalie
+
+Exemple creation anomalie :
+POST /events/64a000000000000000000001/anomalies
+{
+  "itemId": "64a000000000000000000201",
+  "reporterId": "64a000000000000000000103",
+  "severity": "high",
+  "message": "Materiel endommage pendant le transport",
+  "location": {
+    "type": "Point",
+    "coordinates": [2.356, 48.864]
+  }
+}
+
+Exemple update :
+{
+  "status": "resolved"
+}
+
+Reponse attendue :
+- 201 Created pour creation
+- 200 OK pour modification
+
+
+5. TASK CONTROLLER
+
+A quoi il sert :
+Le controleur Task gere les taches terrain.
+Il permet d'assigner une action a un agent ou a un prestataire.
+
+Routes principales :
+- GET /events/{eventId}/tasks
+- POST /events/{eventId}/tasks
+- GET /users/{assigneeId}/tasks
+- PATCH /tasks/{taskId}
+
+Cas d'utilisation :
+- Creer une tache pour un agent terrain
+- Voir toutes les taches d'un evenement
+- Voir les taches d'un utilisateur precis
+- Mettre une tache en cours, terminee ou bloquee
+
+Exemple lister les taches de l'agent :
+GET /users/64a000000000000000000103/tasks
+
+Exemple creation :
+POST /events/64a000000000000000000001/tasks
+{
+  "assigneeId": "64a000000000000000000103",
+  "title": "Verifier la zone STOCK-A",
+  "description": "Controler les equipements presents dans la zone",
+  "zoneCode": "STOCK-A",
+  "itemIds": ["64a000000000000000000201"],
+  "status": "planned",
+  "dueAt": "2026-07-10T12:00:00.000Z"
+}
+
+Exemple update :
+{
+  "status": "done"
+}
+
+
+6. DELIVERY CONTROLLER
+
+A quoi il sert :
+Le controleur Delivery gere les livraisons et feuilles de route.
+Il permet de suivre les transporteurs, les equipements transportes et les arrets prevus.
+
+Routes principales :
+- GET /events/{eventId}/deliveries
+- POST /events/{eventId}/deliveries
+- PATCH /deliveries/{deliveryId}
+- POST /deliveries/{deliveryId}/route-sheet-validations
+
+Cas d'utilisation :
+- Lister les livraisons d'un evenement
+- Creer une livraison avec un transporteur
+- Modifier le statut d'une livraison
+- Valider une feuille de route
+
+Exemple creation :
+POST /events/64a000000000000000000001/deliveries
+{
+  "carrierId": "64a000000000000000000104",
+  "itemIds": ["64a000000000000000000201", "64a000000000000000000203"],
+  "status": "planned",
+  "stops": [
+    {
+      "zoneCode": "STOCK-A",
+      "plannedAt": "2026-07-10T09:00:00.000Z",
+      "location": {
+        "type": "Point",
+        "coordinates": [2.3522, 48.8566]
+      }
+    }
+  ]
+}
+
+Exemple validation feuille de route :
+POST /deliveries/{deliveryId}/route-sheet-validations
+
+Reponse attendue :
+- La livraison passe en in_transit
+- routeSheetValidated passe a true
+
+
+7. DASHBOARD CONTROLLER
+
+A quoi il sert :
+Le controleur Dashboard sert au pilotage.
+Il calcule des indicateurs KPI a partir des donnees de la base.
+
+Route principale :
+- GET /events/{eventId}/dashboard
+
+Cas d'utilisation :
+- Voir la repartition des equipements par statut
+- Voir les anomalies par severite
+- Voir les taches par statut
+- Voir les livraisons par statut
+- Voir le total carbone des equipements
+
+Exemple :
+GET /events/64a000000000000000000001/dashboard
+
+Reponse attendue :
+Un objet avec plusieurs indicateurs, par exemple :
+- stockByStatus
+- carbon
+- tasksByStatus
+- deliveriesByStatus
+- anomaliesBySeverity
+
+Utilite dans une presentation :
+Cette route montre que l'API ne fait pas seulement du CRUD.
+Elle agrege les donnees pour donner une vue de pilotage.
+
+
+8. NOTIFICATION CONTROLLER
+
+A quoi il sert :
+Le controleur Notification gere les messages envoyes aux utilisateurs.
+Il permet de creer une notification, de lister les non lues et de marquer une notification comme lue.
+
+Routes principales :
+- POST /notifications
+- GET /users/{recipientId}/notifications
+- PATCH /users/{recipientId}/notifications/{notificationId}/read
+
+Cas d'utilisation :
+- Prevenir un manager d'une anomalie critique
+- Envoyer une consigne a un agent terrain
+- Lister les notifications non lues d'un utilisateur
+- Marquer une notification comme lue
+
+Exemple creation :
+POST /notifications
+{
+  "eventId": "64a000000000000000000001",
+  "recipientId": "64a000000000000000000103",
+  "title": "Controle urgent",
+  "message": "Verifier la zone STOCK-A avant midi",
+  "critical": true
+}
+
+Exemple lister non lues :
+GET /users/64a000000000000000000103/notifications
+
+Reponse attendue :
+- Liste des notifications non lues du destinataire
+
+
+9. MONITORING CONTROLLER
+
+A quoi il sert :
+Le controleur Monitoring gere les metriques techniques ou operationnelles.
+Les metriques sont stockees dans une collection MongoDB time series.
+
+Routes principales :
+- POST /monitoring/metrics
+- GET /events/{eventId}/monitoring/metrics
+
+Cas d'utilisation :
+- Enregistrer une latence API
+- Enregistrer un nombre de scans
+- Enregistrer un nombre de conflits de synchronisation
+- Suivre un indicateur carbone
+
+Exemple creation :
+POST /monitoring/metrics
+{
+  "eventId": "64a000000000000000000001",
+  "source": "swagger",
+  "name": "scan_count",
+  "value": 5
+}
+
+Exemple lecture :
+GET /events/64a000000000000000000001/monitoring/metrics
+
+Reponse attendue :
+- Liste des dernieres metriques de l'evenement
+
+
+10. SYNC CONTROLLER
+
+A quoi il sert :
+Le controleur Sync gere la synchronisation offline-first.
+Il permet d'envoyer au serveur des operations faites hors ligne par un agent terrain.
+
+Route principale :
+- POST /sync
+
+Cas d'utilisation :
+- Synchroniser un scan fait hors connexion
+- Synchroniser un mouvement d'equipement
+- Detecter un conflit de version
+- Eviter d'ecraser une modification plus recente
+
+Principe :
+Chaque equipement possede un offlineVersion.
+Le client envoie expectedOfflineVersion.
+Si la version correspond, l'operation est appliquee.
+Sinon, l'API renvoie 409 Conflict.
+
+Exemple scan offline :
+POST /sync
+{
+  "operations": [
+    {
+      "clientOperationId": "op-swagger-001",
+      "itemId": "64a000000000000000000201",
+      "expectedOfflineVersion": 1,
+      "action": "scanned",
+      "actorId": "64a000000000000000000103",
+      "payload": {
+        "source": "offline-device-1",
+        "location": {
+          "type": "Point",
+          "coordinates": [2.3522, 48.8566]
+        }
+      }
+    }
+  ]
+}
+
+Reponse attendue :
+- 200 OK si l'operation est appliquee
+- 409 Conflict si la version offline n'est plus la bonne
+
+
+RESUME RAPIDE POUR LA PRESENTATION
+
+Auth :
+sert a se connecter et obtenir un token JWT.
+
+Event :
+sert a gerer le cadre principal, donc l'evenement et ses zones.
+
+Item :
+sert a suivre les equipements, leurs statuts, leurs zones et leur historique.
+
+Anomaly :
+sert a declarer et suivre les incidents terrain.
+
+Task :
+sert a organiser le travail des agents et prestataires.
+
+Delivery :
+sert a suivre les livraisons et les feuilles de route.
+
+Dashboard :
+sert a afficher des KPI pour le pilotage.
+
+Notification :
+sert a informer les utilisateurs d'une action ou d'un probleme.
+
+Monitoring :
+sert a stocker les metriques techniques ou operationnelles dans le temps.
+
+Sync :
+sert a gerer les operations offline et les conflits de synchronisation.
+
+
+COMMENT FONCTIONNE L'ARCHITECTURE : CONTROLLER, SERVICE, REPOSITORY, MODEL
+
+L'idee simple :
+Quand tu fais un test dans Swagger, la requete ne va pas directement dans MongoDB.
+Elle traverse plusieurs couches. Chaque couche a un role precis.
+
+Ordre de passage :
+Swagger
+-> Route
+-> Controller
+-> Service
+-> Repository
+-> Model Mongoose
+-> MongoDB
+
+
+1. ROUTE
+
+A quoi ca sert :
+La route indique quelle fonction appeler selon l'URL et la methode HTTP.
+
+Exemple :
+GET /api/v1/events/64a000000000000000000001/items
+
+Dans le code :
+src/routes/api.routes.ts
+
+La route dit :
+"Quand quelqu'un appelle GET /events/:eventId/items, il faut appeler items.list"
+
+Exemple dans le projet :
+this.router.get("/events/:eventId/items", asyncHandler(items.list));
+
+
+2. CONTROLLER
+
+A quoi ca sert :
+Le controller recoit la requete HTTP.
+Il recupere les parametres, le body JSON, puis appelle le service.
+
+Il ne doit pas contenir toute la logique metier.
+Son role est surtout de faire le lien entre HTTP et le reste du code.
+
+Exemple :
+src/controllers/item.controller.ts
+
+Pour lister les equipements :
+public list = async (request, response) => {
+  response.status(200).json(await this.items.list(request.params.eventId));
+};
+
+Traduction simple :
+Le controller recupere eventId dans l'URL.
+Il appelle ItemService.list(eventId).
+Puis il renvoie le resultat en JSON avec le code HTTP 200.
+
+
+3. SERVICE
+
+A quoi ca sert :
+Le service contient la logique metier.
+C'est ici qu'on applique les regles importantes du projet.
+
+Exemples de logique metier :
+- verifier qu'un id est valide
+- dire quoi faire quand un item est introuvable
+- changer le statut d'un equipement apres un scan
+- ajouter une ligne dans l'historique
+- gerer les conflits offline
+
+Exemple :
+src/services/item.service.ts
+
+Quand on scanne un equipement :
+public async scan(id, data) {
+  return this.addHistory(id, { status: ItemStatus.InTransit }, "scanned", data);
+}
+
+Traduction simple :
+Quand un item est scanne, le service decide que son statut devient in_transit.
+Il ajoute aussi une action "scanned" dans l'historique.
+
+
+4. REPOSITORY
+
+A quoi ca sert :
+Le repository est la couche qui parle avec MongoDB.
+Il contient les requetes vers la base.
+
+Le service ne fait pas directement ItemModel.find().
+Il passe par le repository.
+
+Pourquoi ?
+Parce que ca evite de mettre des requetes MongoDB partout dans le projet.
+Si on veut modifier une requete, on sait ou aller.
+
+Exemple :
+src/repositories/item.repository.ts
+
+Le repository peut faire :
+- findByEvent(eventId)
+- findById(id)
+- updateById(id, data)
+- deleteById(id)
+- appendHistory(id, update, history)
+
+Traduction simple :
+Le repository est le "specialiste base de donnees" pour une ressource.
+
+
+5. MODEL
+
+A quoi ca sert :
+Le model Mongoose decrit la structure des donnees dans MongoDB.
+Il dit quels champs existent, quels champs sont obligatoires, quels types sont attendus, et quels index utiliser.
+
+Exemple :
+src/models/item.model.ts
+
+Un equipement contient par exemple :
+- eventId
+- qrCode
+- label
+- category
+- status
+- zoneCode
+- responsibleUserId
+- carbonKg
+- history
+- offlineVersion
+
+Le model sert aussi a definir les index :
+Par exemple un index sur eventId + status + zoneCode pour rechercher rapidement les equipements d'un evenement selon leur statut et leur zone.
+
+
+6. MONGODB
+
+A quoi ca sert :
+MongoDB est la vraie base de donnees.
+C'est la que les documents sont stockes.
+
+Les collections principales sont :
+- users
+- events
+- items
+- tasks
+- deliveries
+- anomalies
+- notifications
+- monitoringmetrics
+
+
+EXEMPLE COMPLET : LISTER LES EQUIPEMENTS D'UN EVENEMENT
+
+Dans Swagger, tu fais :
+GET /events/64a000000000000000000001/items
+
+Voici ce qui se passe :
+
+1. Swagger envoie la requete HTTP.
+
+2. La route reconnait :
+GET /events/:eventId/items
+et appelle ItemController.list.
+
+3. Le controller recupere :
+eventId = 64a000000000000000000001
+et appelle ItemService.list(eventId).
+
+4. Le service verifie que eventId est un ObjectId MongoDB valide.
+Si l'id est invalide, il renvoie une erreur 400.
+
+5. Le service appelle ItemRepository.findByEvent(eventId).
+
+6. Le repository utilise ItemModel pour faire une requete MongoDB.
+
+7. MongoDB renvoie les equipements de cet evenement.
+
+8. Le controller renvoie la reponse au client avec :
+200 OK
+et la liste des equipements en JSON.
+
+
+EXEMPLE COMPLET : SCANNER UN EQUIPEMENT
+
+Dans Swagger, tu fais :
+POST /items/64a000000000000000000201/scans
+
+Body :
+{
+  "actorId": "64a000000000000000000103",
+  "location": {
+    "type": "Point",
+    "coordinates": [2.3522, 48.8566]
+  },
+  "details": {
+    "source": "swagger-demo"
+  }
+}
+
+Voici ce qui se passe :
+
+1. La route appelle ItemController.scan.
+
+2. Le controller valide le body avec Zod.
+Si le body est mauvais, l'API renvoie 422.
+
+3. Le controller appelle ItemService.scan.
+
+4. Le service decide la regle metier :
+un scan passe l'equipement en status in_transit.
+
+5. Le service ajoute une entree dans l'historique :
+action = scanned
+actorId = l'agent
+location = coordonnees GPS
+
+6. Le service appelle le repository pour mettre a jour l'item.
+
+7. Le repository utilise le model Mongoose ItemModel.
+
+8. MongoDB modifie le document dans la collection items.
+
+9. L'API renvoie l'equipement mis a jour.
+
+
+RESUME TRES SIMPLE
+
+Route :
+Elle choisit quel controller appeler selon l'URL.
+
+Controller :
+Il recoit la requete HTTP et renvoie la reponse.
+
+Service :
+Il contient les regles metier.
+C'est le cerveau fonctionnel.
+
+Repository :
+Il fait les requetes vers la base.
+C'est le pont vers MongoDB.
+
+Model :
+Il definit la forme des documents MongoDB.
+C'est le plan des donnees.
+
+MongoDB :
+C'est l'endroit ou les donnees sont stockees.
+
+
+PHRASE SIMPLE A DIRE A L'ORAL
+
+"Quand une requete arrive depuis Swagger, elle passe d'abord par une route.
+La route appelle un controller.
+Le controller recupere les donnees de la requete et appelle un service.
+Le service applique la logique metier.
+Ensuite, il appelle un repository pour acceder a MongoDB.
+Le repository utilise un model Mongoose, qui definit la structure des donnees.
+Enfin, MongoDB renvoie les donnees, et le controller les renvoie au client en JSON."

@@ -1,0 +1,93 @@
+Notes orales - Presentation LogiChain API + BDD
+Objectif : parler naturellement, environ 45 secondes a 1 minute par slide.
+
+SLIDE 1 - Introduction
+Bonjour, je vais vous presenter LogiChain, un projet centre sur la partie API et base de donnees d'une plateforme de logistique evenementielle.
+
+L'idee est de construire le backend qui permet de gerer les donnees principales d'un evenement : les utilisateurs, les zones, les equipements, les livraisons, les taches et les anomalies.
+
+Le projet est developpe avec Node.js, TypeScript, Express et MongoDB. Il expose une API REST documentee avec Swagger, ce qui permet de tester les routes directement sans avoir besoin d'un front.
+
+
+SLIDE 2 - Contexte
+Le contexte du projet, c'est la gestion logistique de grands evenements, par exemple un festival, un salon ou un rassemblement important.
+
+Dans ce type d'environnement, il y a beaucoup de materiel a suivre, plusieurs zones, des agents sur le terrain, des transporteurs et parfois des problemes a gerer rapidement.
+
+Le besoin principal est donc d'avoir une source de donnees fiable pour savoir ou se trouve un equipement, dans quel etat il est, qui en est responsable, et quelles actions ont deja ete effectuees dessus.
+
+
+SLIDE 3 - Objectifs
+L'objectif de mon travail etait de construire une base backend solide.
+
+Concretement, l'API doit permettre de centraliser les donnees dans MongoDB, de fournir des routes REST claires, et de gerer les objets metier principaux : evenements, equipements, taches, livraisons, anomalies et notifications.
+
+Un autre objectif important est la tracabilite. Chaque scan, deplacement ou transfert doit laisser une trace. Le projet prevoit aussi un fonctionnement offline-first, utile quand les agents terrain ont une connexion instable.
+
+
+SLIDE 4 - Architecture
+Le projet suit une architecture N-Tier, donc le code est decoupe en plusieurs couches.
+
+Les models definissent les schemas MongoDB. Les repositories sont responsables de l'acces a la base de donnees. Les services contiennent la logique metier. Les controllers gerent l'adaptation entre HTTP et le metier. Enfin, les routes exposent les endpoints REST.
+
+Ce decoupage evite de melanger la logique metier, les requetes HTTP et l'acces a la base. C'est plus propre, plus maintenable, et plus facile a faire evoluer.
+
+
+SLIDE 5 - Base de donnees
+La base utilisee est MongoDB, avec Mongoose pour definir les schemas, les validations et les index.
+
+Les collections principales sont users, events, items, tasks, deliveries, anomalies, notifications et monitoringmetrics.
+
+MongoDB est interessant ici parce que les donnees logistiques peuvent contenir des structures imbriquees, par exemple l'historique d'un equipement. Le projet utilise aussi GeoJSON pour representer les positions et les zones, et une collection time series pour les metriques de monitoring.
+
+Des index sont prevus pour ameliorer les recherches par evenement, statut, zone, responsable ou position geographique.
+
+
+SLIDE 6 - Fonctionnalites API
+L'API couvre les grandes fonctionnalites attendues pour le projet.
+
+On peut s'authentifier, gerer des evenements et leurs zones, creer des equipements, les scanner, les deplacer, transferer leur responsabilite ou les mettre en maintenance.
+
+Il y a aussi des routes pour les anomalies geolocalisees, les taches terrain, les livraisons, les notifications, les metriques de monitoring et le dashboard KPI.
+
+Toutes ces routes sont regroupees sous /api/v1 et elles sont testables dans Swagger.
+
+
+SLIDE 7 - Securite
+La securite repose principalement sur l'authentification JWT.
+
+L'utilisateur se connecte ou s'inscrit, puis il recupere un token. Ensuite, pour acceder aux routes protegees, il doit envoyer ce token dans le header Authorization avec le format Bearer token.
+
+Le projet gere aussi plusieurs roles : admin, logistic_manager, field_agent et provider. Certaines actions sont reservees a des roles precis, par exemple la suppression d'un evenement ou la creation d'un equipement.
+
+Les donnees envoyees a l'API sont validees avec Zod, et les schemas sont aussi controles cote MongoDB avec Mongoose.
+
+
+SLIDE 8 - Tracabilite et offline-first
+Un point important du projet est la tracabilite.
+
+Chaque equipement possede un historique d'actions. On peut donc retrouver les scans, les mouvements, les transferts, les passages en maintenance ou les anomalies associees.
+
+Pour l'offline-first, chaque equipement a une offlineVersion. Quand un agent envoie des operations apres une periode hors ligne, l'API compare la version attendue avec la version actuelle en base.
+
+Si la version correspond, l'operation est appliquee. Si elle ne correspond pas, l'API renvoie un conflit 409. Cela evite d'ecraser une modification plus recente faite par quelqu'un d'autre.
+
+
+SLIDE 9 - Demonstration
+Pour tester le projet, j'utilise Swagger a l'adresse http://127.0.0.1:3000/docs.
+
+Le parcours de demo commence par /health pour verifier que l'API fonctionne. Ensuite, on cree un utilisateur avec /auth/register ou on se connecte avec /auth/login.
+
+Une fois le token recupere, on clique sur Authorize dans Swagger. Ensuite, on peut creer un evenement, ajouter des zones, creer un equipement, le scanner ou le deplacer.
+
+On peut aussi creer une anomalie ou une tache, puis consulter le dashboard KPI. Cette demo montre que l'API, la securite, la logique metier et MongoDB fonctionnent ensemble.
+
+
+SLIDE 10 - Conclusion
+Pour conclure, ce projet fournit une base backend complete pour LogiChain.
+
+Les points forts sont l'architecture claire, l'API REST documentee, l'utilisation de MongoDB pour les donnees logistiques, la securite avec JWT, la geolocalisation, l'historique des equipements et la synchronisation offline-first.
+
+Les prochaines evolutions possibles seraient d'ajouter un front web ou mobile, de renforcer les tests automatises, de faire des tests de charge, puis de deployer l'API sur un environnement cloud.
+
+L'objectif final est d'avoir un socle fiable pour une plateforme capable d'aider les equipes terrain a suivre et piloter la logistique d'un evenement.

@@ -1,0 +1,101 @@
+name: Deploiement
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  validation:
+    if: vars.DEPLOY_ENABLED == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  image:
+    needs: validation
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.reference.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Calculer le nom de l image
+        id: name
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "image=ghcr.io/${REPOSITORY,,}/api" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        id: build
+        with:
+          context: TP3-M2-APi
+          push: true
+          tags: ${{ steps.name.outputs.image }}:${{ github.sha }}
+      - name: Enregistrer la reference immuable
+        id: reference
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          echo "image=$IMAGE@$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Image candidate : \`$IMAGE@$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-24.04
+    environment: production
+    defaults:
+      run:
+        working-directory: TP3-M2-GIT/ansible
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_USER: deploy
+      DEPLOY_PUBLIC_KEY: ${{ vars.DEPLOY_PUBLIC_KEY }}
+      SSH_ALLOWED_CIDR: ${{ vars.SSH_ALLOWED_CIDR }}
+      API_DOMAIN: ${{ vars.API_DOMAIN }}
+      API_IMAGE: ${{ needs.image.outputs.image }}
+      MONGO_ADMIN_PASSWORD: ${{ secrets.MONGO_ADMIN_PASSWORD }}
+      MONGO_APP_PASSWORD: ${{ secrets.MONGO_APP_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      TLS_CERTIFICATE_FILE: ${{ runner.temp }}/fullchain.pem
+      TLS_PRIVATE_KEY_FILE: ${{ runner.temp }}/privkey.pem
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: ansible-galaxy collection install -r requirements.yml
+      - name: Installer les fichiers prives temporaires
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          TLS_CERTIFICATE: ${{ secrets.TLS_CERTIFICATE }}
+          TLS_PRIVATE_KEY: ${{ secrets.TLS_PRIVATE_KEY }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$TLS_CERTIFICATE" > "$TLS_CERTIFICATE_FILE"
+          printf '%s\n' "$TLS_PRIVATE_KEY" > "$TLS_PRIVATE_KEY_FILE"
+      - run: ansible-playbook site.yml
+      - name: Enregistrer le deploiement valide
+        run: echo "Version deployee et controlee en HTTPS : \`$API_IMAGE\`" >> "$GITHUB_STEP_SUMMARY"
+      - name: Effacer les fichiers prives du runner
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts "$TLS_CERTIFICATE_FILE" "$TLS_PRIVATE_KEY_FILE"

@@ -1,0 +1,209 @@
+Presentation Gamma - 10 slides
+Sujet : LogiChain - API REST + Base de donnees MongoDB
+Style souhaite : presentation professionnelle, claire, moderne, orientee projet informatique. Utiliser des schemas simples, des pictogrammes tech/logistique, et une mise en page sobre. Une slide = une idee principale. Eviter les longs paragraphes.
+
+SLIDE 1 - LogiChain : API + Base de donnees
+Titre principal :
+LogiChain
+
+Sous-titre :
+API REST et base de donnees pour la logistique evenementielle
+
+Contenu :
+- Projet backend realise en Node.js, TypeScript, Express et MongoDB
+- Objectif : centraliser, tracer et piloter les operations logistiques d'un evenement
+- Documentation interactive avec Swagger
+
+Visuel suggere :
+Schema simple montrant un evenement, des agents terrain, une API et une base MongoDB.
+
+
+SLIDE 2 - Contexte et probleme
+Titre :
+Un besoin concret sur les grands evenements
+
+Contenu :
+Les grands evenements doivent gerer beaucoup de materiel, de zones, de prestataires, de livraisons et d'incidents terrain.
+
+Problemes a resoudre :
+- Suivre les equipements en temps reel
+- Connaitre leur zone, leur statut et leur responsable
+- Gerer les taches et les livraisons
+- Detecter les anomalies rapidement
+- Garder une trace fiable meme avec une connexion instable
+
+Visuel suggere :
+Carte d'evenement avec zones, equipements et alertes.
+
+
+SLIDE 3 - Objectifs du projet API + BDD
+Titre :
+Ce que doit apporter le backend
+
+Contenu :
+- Fournir une API REST claire pour un futur front web ou mobile
+- Stocker les donnees metier dans MongoDB
+- Gerer les utilisateurs, evenements, zones, equipements, taches et livraisons
+- Tracer les scans, mouvements, transferts et maintenances
+- Exposer des indicateurs de pilotage via un dashboard
+- Prevoir une synchronisation offline-first
+
+Message cle :
+Le projet se concentre sur une base backend robuste, exploitable et evolutive.
+
+
+SLIDE 4 - Architecture technique
+Titre :
+Une architecture N-Tier structuree
+
+Contenu :
+Le code est separe en couches avec des responsabilites precises :
+
+- Models : schemas MongoDB, validations, index, GeoJSON
+- Repositories : acces exclusif a la base de donnees
+- Services : logique metier et regles de gestion
+- Controllers : adaptation des requetes HTTP
+- Routes : exposition des endpoints REST
+
+Benefices :
+- Code plus lisible
+- Maintenance plus simple
+- Separation claire entre API, metier et base de donnees
+
+Visuel suggere :
+Diagramme en couches : Routes -> Controllers -> Services -> Repositories -> MongoDB.
+
+
+SLIDE 5 - Modele de donnees MongoDB
+Titre :
+Une base adaptee aux donnees logistiques
+
+Collections principales :
+- users
+- events
+- items
+- tasks
+- deliveries
+- anomalies
+- notifications
+- monitoringmetrics
+
+Choix techniques :
+- Documents imbriques pour l'historique des equipements
+- GeoJSON pour les coordonnees et les zones
+- Collection time series pour le monitoring
+- Index composes et geospatiaux pour ameliorer les recherches
+
+Visuel suggere :
+Schema MongoDB avec collections reliees autour d'un evenement.
+
+
+SLIDE 6 - Fonctionnalites exposees par l'API
+Titre :
+Les ressources couvertes
+
+Contenu :
+L'API permet de piloter les principaux objets du systeme :
+
+- Authentification et roles utilisateurs
+- Evenements et zones geographiques
+- Equipements avec QR code, statut, responsable et historique
+- Scans, mouvements, transferts et maintenance
+- Anomalies geolocalisees
+- Taches assignees aux agents
+- Livraisons et validations de feuilles de route
+- Notifications
+- Monitoring et KPI dashboard
+
+Message cle :
+Swagger permet de tester toutes les routes sans interface front.
+
+
+SLIDE 7 - Securite et validation
+Titre :
+Une API protegee et controlee
+
+Contenu :
+Elements mis en place :
+- Authentification par JWT
+- Routes protegees par header Authorization: Bearer token
+- Roles : admin, logistic_manager, field_agent, provider
+- Autorisations differentes selon les actions
+- Validation des entrees avec Zod
+- Validation des schemas avec Mongoose
+- Gestion standardisee des erreurs HTTP
+
+Exemples de codes :
+- 401 : token absent ou invalide
+- 403 : role insuffisant
+- 409 : conflit de synchronisation
+- 422 : donnees invalides
+
+
+SLIDE 8 - Tracabilite et offline-first
+Titre :
+Garder une trace fiable du terrain
+
+Contenu :
+Chaque equipement possede :
+- Un statut
+- Une zone
+- Un responsable
+- Un historique d'actions
+- Une version offline
+
+Principe offline-first :
+- Le terrain peut enregistrer des operations localement
+- Les operations sont envoyees ensuite a /api/v1/sync
+- L'API compare expectedOfflineVersion avec la version en base
+- Si les versions correspondent : operation appliquee
+- Sinon : conflit 409 pour eviter d'ecraser des donnees recentes
+
+Visuel suggere :
+Flux Agent terrain -> Sync API -> Verification version -> MongoDB.
+
+
+SLIDE 9 - Demonstration et parcours de test
+Titre :
+Tester le projet avec Swagger
+
+URL :
+http://127.0.0.1:3000/docs
+
+Parcours de demonstration :
+1. Verifier l'etat de l'API avec /health
+2. Creer un utilisateur avec /auth/register
+3. Recuperer le token JWT
+4. Cliquer sur Authorize dans Swagger
+5. Creer un evenement avec ses zones
+6. Creer un equipement
+7. Scanner ou deplacer l'equipement
+8. Creer une anomalie ou une tache
+9. Consulter le dashboard KPI
+
+Message cle :
+La demo montre le lien complet entre API, securite, logique metier et base de donnees.
+
+
+SLIDE 10 - Bilan et perspectives
+Titre :
+Une base backend complete pour LogiChain
+
+Points forts :
+- API REST structuree et documentee
+- Architecture N-Tier claire
+- MongoDB adapte aux besoins terrain
+- Gestion des roles et JWT
+- Donnees geolocalisees
+- Historique des equipements
+- Monitoring et KPI
+- Synchronisation offline-first
+
+Perspectives :
+- Ajouter une application web ou mobile
+- Ajouter des tests automatises plus complets
+- Ajouter des tests de charge
+- Preparer un deploiement cloud
+
+Conclusion :
+Ce backend constitue le socle technique d'une plateforme logistique evenementielle fiable, tracable et evolutive.
