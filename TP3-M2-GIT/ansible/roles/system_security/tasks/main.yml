@@ -9,6 +9,7 @@
   ansible.builtin.apt:
     name:
       - docker.io
+      - certbot
       - python3-docker
       - python3-pymongo
       - python3-requests

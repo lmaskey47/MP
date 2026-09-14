@@ -48,6 +48,27 @@
     enabled: true
     state: started
 
+- name: Detecter un certificat Certbot gere sur le serveur
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ api_domain }}/fullchain.pem"
+  register: web_proxy_certbot_certificate
+
+- name: Installer les scripts de renouvellement Certbot
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: '0700'
+  loop:
+    - src: certbot-stop-nginx.sh.j2
+      dest: /etc/letsencrypt/renewal-hooks/pre/logichain-stop-nginx
+    - src: certbot-start-nginx.sh.j2
+      dest: /etc/letsencrypt/renewal-hooks/post/logichain-start-nginx
+    - src: certbot-deploy-nginx.sh.j2
+      dest: /etc/letsencrypt/renewal-hooks/deploy/logichain-deploy-nginx
+  when: web_proxy_certbot_certificate.stat.exists
+
 - name: Appliquer les changements avant le controle HTTPS
   ansible.builtin.meta: flush_handlers
 

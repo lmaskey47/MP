@@ -76,7 +76,7 @@ sur `main` est la validation précédant le déploiement automatique.
 
 ## Préparer le serveur et les accès
 
-Cible : un serveur **Ubuntu 24.04 LTS amd64**, SSH et Python 3 disponibles,
+Cible : un serveur **Ubuntu 24.04 ou 26.04 LTS amd64**, SSH et Python 3 disponibles,
 avec un utilisateur initial ayant sudo. Le DNS du domaine doit pointer dessus.
 Ansible configure le système ; la création de la VM chez un hébergeur et
 l'enregistrement DNS restent des prérequis, aucun fournisseur n'étant imposé.
@@ -108,7 +108,7 @@ le shell avec `set -a; . /chemin/prive/deploy.env; set +a`.
 | `DEPLOY_HOST` | IP ou nom SSH du serveur |
 | `DEPLOY_USER` | utilisateur initial au premier passage ; `deploy` ensuite |
 | `DEPLOY_PUBLIC_KEY` | clé publique SSH qui sera installée pour `deploy` |
-| `SSH_ALLOWED_CIDR` | réseau d'administration autorisé sur le port 22, incluant le contrôleur |
+| `SSH_ALLOWED_CIDR` | réseau d'administration autorisé sur le port 22, incluant le contrôleur ; les runners GitHub hébergés nécessitent actuellement `0.0.0.0/0` |
 | `API_DOMAIN` | domaine DNS de l'API, sans protocole ni chemin |
 | `API_IMAGE` | `ghcr.io/proprietaire/depot/api@sha256:<64 caractères hexadécimaux>` |
 | `MONGO_ADMIN_PASSWORD` | mot de passe administrateur MongoDB, au moins 32 caractères |

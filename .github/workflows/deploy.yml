@@ -58,6 +58,9 @@ jobs:
     needs: image
     runs-on: ubuntu-24.04
     environment: production
+    permissions:
+      contents: read
+      packages: read
     defaults:
       run:
         working-directory: TP3-M2-GIT/ansible
@@ -71,8 +74,8 @@ jobs:
       MONGO_ADMIN_PASSWORD: ${{ secrets.MONGO_ADMIN_PASSWORD }}
       MONGO_APP_PASSWORD: ${{ secrets.MONGO_APP_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      TLS_CERTIFICATE_FILE: ${{ runner.temp }}/fullchain.pem
-      TLS_PRIVATE_KEY_FILE: ${{ runner.temp }}/privkey.pem
+      TLS_CERTIFICATE_FILE: /tmp/logichain-fullchain.pem
+      TLS_PRIVATE_KEY_FILE: /tmp/logichain-privkey.pem
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -93,10 +96,19 @@ jobs:
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           printf '%s\n' "$TLS_CERTIFICATE" > "$TLS_CERTIFICATE_FILE"
           printf '%s\n' "$TLS_PRIVATE_KEY" > "$TLS_PRIVATE_KEY_FILE"
+      - name: Autoriser temporairement le serveur a recuperer l image
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          # shellcheck disable=SC2029
+          printf '%s' "$REGISTRY_TOKEN" | ssh deploy@"$DEPLOY_HOST" "sudo docker login ghcr.io -u '$REGISTRY_USER' --password-stdin"
       - run: ansible-playbook site.yml
       - name: Enregistrer le deploiement valide
         run: |
           echo "Version deployee et controlee en HTTPS : \`$API_IMAGE\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Effacer les fichiers prives du runner
         if: always()
-        run: rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts "$TLS_CERTIFICATE_FILE" "$TLS_PRIVATE_KEY_FILE"
+        run: |
+          ssh deploy@"$DEPLOY_HOST" 'sudo docker logout ghcr.io' || true
+          rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts "$TLS_CERTIFICATE_FILE" "$TLS_PRIVATE_KEY_FILE"
