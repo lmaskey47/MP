@@ -126,10 +126,10 @@ sudo docker stop logichain-api
 4. Restaurer en remplaçant explicitement les collections présentes dans l'archive :
 
 ```bash
-sudo docker run --rm --network host \
+sudo docker run --rm --user 0:0 --network host --entrypoint mongorestore \
   --mount type=bind,src=/etc/logichain/mongotools.yml,dst=/run/mongotools.yml,readonly \
   --mount type=bind,src=/var/backups/logichain/ARCHIVE.archive.gz,dst=/run/backup.archive.gz,readonly \
-  mongo:8.0.14 mongorestore --config=/run/mongotools.yml \
+  mongo:8.0.14 --config=/run/mongotools.yml \
   --archive=/run/backup.archive.gz --gzip --nsInclude='logichain.*' --drop
 ```
 
@@ -166,8 +166,10 @@ Un nouveau `JWT_SECRET` invalide les jetons d'accès précédents ; prévenir le
 utilisateurs et vérifier la reconnexion. Renouveler le certificat auprès de son
 autorité avant expiration, remplacer les secrets/fichiers TLS puis rejouer
 `site.yml`. Nginx valide la paire certificat/clé avant son rechargement.
-Le renouvellement automatique ACME n'est pas configuré sans fournisseur DNS
-ni domaine réel. Vérifier la date d'expiration dans la supervision.
+Pour un certificat Certbot déjà présent sous `/etc/letsencrypt/live/<domaine>`,
+Ansible installe les hooks qui libèrent le port 80 pendant le renouvellement,
+recopient le certificat renouvelé vers Nginx et rechargent sa configuration.
+Vérifier la date d'expiration dans la supervision.
 
 Après une mise à jour système nécessitant un redémarrage, planifier la coupure,
 redémarrer la VM et refaire les contrôles HTTPS, Docker, timer et synchronisation.

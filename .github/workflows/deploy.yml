@@ -58,6 +58,9 @@ jobs:
     needs: image
     runs-on: ubuntu-24.04
     environment: production
+    permissions:
+      contents: read
+      packages: read
     defaults:
       run:
         working-directory: TP3-M2-GIT/ansible
@@ -93,10 +96,18 @@ jobs:
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           printf '%s\n' "$TLS_CERTIFICATE" > "$TLS_CERTIFICATE_FILE"
           printf '%s\n' "$TLS_PRIVATE_KEY" > "$TLS_PRIVATE_KEY_FILE"
+      - name: Autoriser temporairement le serveur a recuperer l image
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | ssh deploy@"$DEPLOY_HOST" "sudo docker login ghcr.io -u '$REGISTRY_USER' --password-stdin"
       - run: ansible-playbook site.yml
       - name: Enregistrer le deploiement valide
         run: |
           echo "Version deployee et controlee en HTTPS : \`$API_IMAGE\`" >> "$GITHUB_STEP_SUMMARY"
       - name: Effacer les fichiers prives du runner
         if: always()
-        run: rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts "$TLS_CERTIFICATE_FILE" "$TLS_PRIVATE_KEY_FILE"
+        run: |
+          ssh deploy@"$DEPLOY_HOST" 'sudo docker logout ghcr.io' || true
+          rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts "$TLS_CERTIFICATE_FILE" "$TLS_PRIVATE_KEY_FILE"

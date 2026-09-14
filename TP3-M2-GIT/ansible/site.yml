@@ -7,15 +7,15 @@
       ansible.builtin.assert:
         that:
           - ansible_distribution == 'Ubuntu'
-          - ansible_distribution_version == '24.04'
-        fail_msg: Le serveur cible doit utiliser Ubuntu 24.04 LTS avec Python 3 et SSH.
+          - ansible_distribution_version in ['24.04', '26.04']
+        fail_msg: Le serveur cible doit utiliser Ubuntu 24.04 ou 26.04 LTS avec Python 3 et SSH.
     - name: Verifier les parametres publics
       ansible.builtin.assert:
         that:
           - deploy_public_key is match('^ssh-(ed25519|rsa) ')
           - ssh_allowed_cidr | length > 0
           - api_domain is match('^[a-zA-Z0-9][a-zA-Z0-9.-]+$')
-          - api_image is match('^ghcr.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$')
+          - api_image == 'logichain-api:bootstrap' or api_image is match('^ghcr.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$')
           - tls_certificate | length > 0
           - tls_private_key | length > 0
     - name: Verifier les secrets obligatoires

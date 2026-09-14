@@ -45,9 +45,14 @@ La CI exécute aussi ce test après la construction de l'image.
 
 ## Recette à réaliser sur la cible réelle
 
-L'absence de serveur, de domaine/certificat et d'accès GitHub empêche de valider
-ces points en situation réelle. Les fichiers préparés ne constituent pas une
-preuve de leur activation distante.
+Une première recette a été exécutée le 14 septembre 2026 sur un VPS Ubuntu 26.04
+LTS. L'API répond en HTTPS, MongoDB exige une authentification, Nginx, UFW,
+Fail2Ban et les conteneurs sont actifs. La connexion SSH directe à root est
+refusée et le compte `deploy` fonctionne par clé. Une sauvegarde réelle a produit
+une archive privée et l'API a redémarré. Le renouvellement Certbot simulé a réussi.
+
+Les points ci-dessous servent à rejouer la recette ou à recueillir de nouvelles
+preuves après un changement d'infrastructure.
 
 1. Appliquer les protections `main` et `develop`, tenter un push direct refusé,
    puis vérifier qu'une PR exige une revue et ses quatre contrôles CI.
